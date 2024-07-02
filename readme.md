@@ -21,7 +21,7 @@ your workflow. For a demonstration, see the two sample projects, `Markdown/Sampl
 `Markdown/Samples/EditorDemo`. 
 
 The SDK is inside the `BrewedInk.MarkdownSupport` assembly, which is not set to be
-automatically referenced. This means that you will need to create your own assembly
+automatically referenced. If you need access to the Editor specifics, use the `BrewedInk.MarkdownSupport.Editor` assembly. This means that you will need to create your own assembly
 definition and add a reference to `BrewedInk.MarkdownSupport` to use the SDK. 
 Alternatively, you can change the `autoReferenced` property to `true` in the 
 _Markdown Support_ assembly definition. 
@@ -122,7 +122,8 @@ code, support for attribute filtering may break with future releases of Unity.
 ## Configuration Context
 
 Everytime _Markdown Support_ renders a markdown file, it needs to contextualize the rendering with
-some extra data. There are 3 pieces of data, the configuration context, the `isRuntime` field, and the `rootFilePath` field.
+some extra data. There are 4 pieces of data, the configuration context, the `isRuntime` field, the the `rootFilePath` field,
+and the `textureLoader` field.
 These pieces of information are stored in the `UMarkdownContext`, which can be obtained in a standard
 set of ways.
 
@@ -149,12 +150,32 @@ However, in Runtime, `AssetDatabase` is not available, and in a built game, imag
 source path information _anyway_. Images are loaded via `Resources`, which means that the filepath is
 also relative to the `Resources` folder regardless of where the original markdown file was located. 
 
+It is possible to override the image load behaviour, see the `textureLoader` property below.
+
 ### `isRuntime`
 
 Images in Runtime are loaded with the `Resources` SDK, and images in Editor are loaded with the `AssetDatabase`. 
 However, there is no obvious way for code in Unity to know if its intended to be executed in Editor, or in Runtime.
 _Markdown Support_'s SDK can be used in either case, so the decision of which image loading technique to use
 is left as a contextual requirement. 
+
+### `textureLoader`
+
+By default, images are loaded from the `AssetDatabase` when in the Editor, and from `Resources` folders 
+when in Runtime. As mentioned, it would be too overbearing to generalize an image loading 
+approach for _all_ possible use cases in the Runtime. Instead, the _Markdown Support_ library takes the approach
+of a "less is more", and offers only `Resources` loading out of the box.
+
+However, within the _Markdown Support_ library, all images are loaded through the `textureLoader` delegate.
+The delegate must be of the `UMarkdownTextureLoader` type, which takes 3 parameters, 
+1. the `UMarkdownContext` instance 
+2. the `MarkdownLinkUri` instance that is being invoked
+3. a callback `Action<Texture2D>` function 
+
+The only requirement is that the given `Action<Texture2D>` callback is executed with a `Texture2D` instance. 
+The `Markdown/Samples/RuntimeDemo/Files/Logic.cs` file has an example showing a custom loader function that
+takes the link content and matches it against a set of `Texture2D` asset names attached to the game object.
+
 
 ### Configuration
 
